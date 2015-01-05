@@ -60,7 +60,20 @@ _.forEach(tracking, function(hash) {
  * App
  ************************************************************************************************************************/
 app.get('/', function (req, res) {
-    t.get('search/tweets', { q: 'banana since:2011-11-11', count: 100 }, function(err, data, response) {
+    var word = {
+        pizza: 0,
+        banana: 0
+    };
+
+    var query = '';
+    _.forEach(word, function(count, hash) {
+        if(query) {
+            query += ' OR ';
+        }
+        query += hash
+    });
+
+    t.get('search/tweets', { q: query, count: 100 }, function(err, data, response) {
         if(err) {
             res.send('Error');
             return;
@@ -68,18 +81,30 @@ app.get('/', function (req, res) {
 
         var sheet = [];
         var head = [];
-        head.push("id");
+        head.push('word');
+        head.push("push");
         sheet.push(head);
 
         for (var i = 0; i < data.statuses.length; i++)
         {
             var tweet = data.statuses[i];
 
+            var lowText = tweet.text.toLowerCase();
+            _.forEach(word, function(count, hash) {
+                if(lowText.indexOf(hash) !== -1) {
+                    word[hash] += 1;
+                }
+            });
+        }
+
+        _.forEach(word, function(count, hash) {
             var row = [];
-            row.push(tweet.id);
+            row.push(hash);
+            row.push(count);
 
             sheet.push(row);
-        }
+        });
+
         var all = [];
         all.push(sheet);
         res.send(JSON.stringify(all));
